@@ -437,3 +437,92 @@ def _format_xsum_to_lines(params):
             tgt.append(sent.split())
         return {'src': source, 'tgt': tgt}
     return None
+
+def custom_format_to_lines(args):
+    corpus_mapping = {}
+    train_files = []
+    for f in glob.glob(pjoin(args.raw_path, '*.json')):
+        train_files.append(f)
+    
+    corpora = {'train': train_files}
+    for corpus_type in ['train']:
+        a_lst = [(f, args) for f in corpora[corpus_type]]
+        pool = Pool(args.n_cpus)
+        dataset = []
+        p_ct = 0
+        for d in pool.imap_unordered(_format_to_lines, a_lst):
+            dataset.append(d)
+            if (len(dataset) > args.shard_size):
+                pt_file = "{:s}.{:s}.{:d}.json".format(args.save_path, corpus_type, p_ct)
+                with open(pt_file, 'w') as save:
+                    # save.write('\n'.join(dataset))
+                    save.write(json.dumps(dataset))
+                    p_ct += 1
+                    dataset = []
+
+        pool.close()
+        pool.join()
+        if (len(dataset) > 0):
+            pt_file = "{:s}.{:s}.{:d}.json".format(args.save_path, corpus_type, p_ct)
+            with open(pt_file, 'w') as save:
+                # save.write('\n'.join(dataset))
+                save.write(json.dumps(dataset))
+                p_ct += 1
+                dataset = []
+                
+def custom_format_to_bert(args):
+        if (args.dataset != ''):
+            datasets = [args.dataset]
+            print('dataset')
+        else:
+            datasets = ['train']
+        for corpus_type in datasets:
+            a_lst = []
+            print('.' + corpus_type + '.0.json')
+            for json_f in glob.glob(args.raw_path + '*' + corpus_type + '.[0-9]*.json'):
+                print(json_f)
+                real_name = json_f.split('/')[-1]
+                print(real_name)
+                a_lst.append((corpus_type, json_f, args, pjoin(args.save_path, real_name.replace('json', 'bert.pt'))))
+            print(a_lst)
+            pool = Pool(args.n_cpus)
+            for d in pool.imap(_format_to_bert, a_lst):
+                pass
+
+            pool.close()
+            pool.join()
+
+def _format_to_bert(params):
+    corpus_type, json_file, args, save_file = params
+    is_test = corpus_type == 'test'
+    if (os.path.exists(save_file)):
+        logger.info('Ignore %s' % save_file)
+        return
+
+    bert = BertData(args)
+
+    logger.info('Processing %s' % json_file)
+    jobs = json.load(open(json_file))
+    datasets = []
+    for d in jobs:
+        source, tgt = d['src'], d['tgt']
+
+        sent_labels = greedy_selection(source[:args.max_src_nsents], tgt, 3)
+        if (args.lower):
+            source = [' '.join(s).lower().split() for s in source]
+            tgt = [' '.join(s).lower().split() for s in tgt]
+        b_data = bert.preprocess(source, tgt, sent_labels, use_bert_basic_tokenizer=args.use_bert_basic_tokenizer, is_test=is_test)
+        # b_data = bert.preprocess(source, tgt, sent_labels, use_bert_basic_tokenizer=args.use_bert_basic_tokenizer)
+
+        if (b_data is None):
+            continue
+        src_subtoken_idxs, sent_labels, tgt_subtoken_idxs, segments_ids, cls_ids, src_txt, tgt_txt = b_data
+        b_data_dict = {"src": src_subtoken_idxs, "tgt": tgt_subtoken_idxs,
+                       "src_sent_labels": sent_labels, "segs": segments_ids, 'clss': cls_ids,
+                       'src_txt': src_txt, "tgt_txt": tgt_txt}
+        datasets.append(b_data_dict)
+    logger.info('Processed instances %d' % len(datasets))
+    logger.info('Saving to %s' % save_file)
+    torch.save(datasets, save_file)
+    datasets = []
+    gc.collect()

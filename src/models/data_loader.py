@@ -72,7 +72,9 @@ def load_dataset(args, corpus_type, shuffle):
     Returns:
         A list of dataset, the dataset(s) are lazily loaded.
     """
-    assert corpus_type in ["train", "valid", "test"]
+    if corpus_type == 'valid':
+        corpus_type = 'val'
+    assert corpus_type in ["train", "val", "test"]
 
     def _lazy_dataset_loader(pt_file, corpus_type):
         dataset = torch.load(pt_file)
@@ -81,7 +83,7 @@ def load_dataset(args, corpus_type, shuffle):
         return dataset
 
     # Sort the glob output by file name (by increasing indexes).
-    pts = sorted(glob.glob(args.bert_data_path + '.' + corpus_type + '.[0-9]*.pt'))
+    pts = sorted(glob.glob(args.bert_data_path + corpus_type + '_[0-9]*.story.bert.pt'))
     if pts:
         if (shuffle):
             random.shuffle(pts)
@@ -90,7 +92,7 @@ def load_dataset(args, corpus_type, shuffle):
             yield _lazy_dataset_loader(pt, corpus_type)
     else:
         # Only one inputters.*Dataset, simple!
-        pt = args.bert_data_path + '.' + corpus_type + '.pt'
+        pt = args.bert_data_path + corpus_type + '.story.bert.pt'
         yield _lazy_dataset_loader(pt, corpus_type)
 
 

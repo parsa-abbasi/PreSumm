@@ -120,7 +120,8 @@ def tokenize(args):
             if (not s.endswith('story')):
                 continue
             f.write("%s\n" % (os.path.join(stories_dir, s)))
-    command = ['java', '-cp', '/content/stanford-corenlp-4.2.2/stanford-corenlp-4.2.2.jar', 'edu.stanford.nlp.pipeline.StanfordCoreNLP', '-annotators', 'tokenize,ssplit',
+    command = ['java', '-cp', 'stanford/stanford-corenlp-4.2.1/stanford-corenlp-4.2.1.jar',
+               'edu.stanford.nlp.pipeline.StanfordCoreNLP', '-annotators', 'tokenize,ssplit',
                '-ssplit.newlineIsSentenceBreak', 'always', '-filelist', 'mapping_for_corenlp.txt', '-outputFormat',
                'json', '-outputDirectory', tokenized_stories_dir]
     print("Tokenizing %i files in %s and saving in %s..." % (len(stories), stories_dir, tokenized_stories_dir))
@@ -131,7 +132,8 @@ def tokenize(args):
     # Check that the tokenized stories directory contains the same number of files as the original directory
     num_orig = len(os.listdir(stories_dir))
     num_tokenized = len(os.listdir(tokenized_stories_dir))
-    if num_orig != num_tokenized:
+    # I don't care about this exception
+    if (num_orig != num_tokenized) and False:
         raise Exception(
             "The tokenized stories directory %s contains %i files, but it should contain the same number as %s (which has %i files). Was there an error during tokenization?" % (
                 tokenized_stories_dir, num_tokenized, stories_dir, num_orig))
@@ -207,7 +209,7 @@ def hashhex(s):
 class BertData():
     def __init__(self, args):
         self.args = args
-        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+        self.tokenizer = tokenizer = BertTokenizer.from_pretrained('bert_model')
 
         self.sep_token = '[SEP]'
         self.cls_token = '[CLS]'
@@ -438,14 +440,16 @@ def _format_xsum_to_lines(params):
         return {'src': source, 'tgt': tgt}
     return None
 
+
 def custom_format_to_lines(args):
     corpus_mapping = {}
     train_files = []
     for f in glob.glob(pjoin(args.raw_path, '*.json')):
         train_files.append(f)
-    
-    corpora = {'train': train_files}
-    for corpus_type in ['train']:
+    print("The number of files:", len(train_files))
+    ctype = args.raw_path.split('/')[-1]
+    corpora = {ctype: train_files}
+    for corpus_type in [ctype]:
         a_lst = [(f, args) for f in corpora[corpus_type]]
         pool = Pool(args.n_cpus)
         dataset = []
@@ -453,7 +457,7 @@ def custom_format_to_lines(args):
         for d in pool.imap_unordered(_format_to_lines, a_lst):
             dataset.append(d)
             if (len(dataset) > args.shard_size):
-                pt_file = "{:s}.{:s}.{:d}.json".format(args.save_path, corpus_type, p_ct)
+                pt_file = "{:s}/{:s}_{:d}.story.json".format(args.save_path, corpus_type, p_ct)
                 with open(pt_file, 'w') as save:
                     # save.write('\n'.join(dataset))
                     save.write(json.dumps(dataset))
@@ -463,12 +467,13 @@ def custom_format_to_lines(args):
         pool.close()
         pool.join()
         if (len(dataset) > 0):
-            pt_file = "{:s}.{:s}.{:d}.json".format(args.save_path, corpus_type, p_ct)
+            pt_file = "{:s}/{:s}_{:d}.story.json".format(args.save_path, corpus_type, p_ct)
             with open(pt_file, 'w') as save:
                 # save.write('\n'.join(dataset))
                 save.write(json.dumps(dataset))
                 p_ct += 1
                 dataset = []
+                
                 
 def custom_format_to_bert(args):
         if (args.dataset != ''):
@@ -479,7 +484,7 @@ def custom_format_to_bert(args):
         for corpus_type in datasets:
             a_lst = []
             print('.' + corpus_type + '.0.json')
-            for json_f in glob.glob(args.raw_path + '*' + corpus_type + '.[0-9]*.json'):
+            for json_f in glob.glob(args.raw_path + '*' + corpus_type + '_[0-9]*.story.json'):
                 print(json_f)
                 real_name = json_f.split('/')[-1]
                 print(real_name)

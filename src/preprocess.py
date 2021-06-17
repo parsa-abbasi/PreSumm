@@ -42,13 +42,13 @@ def str2bool(v):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-pretrained_model", default='ParsBert', type=str)
+    parser.add_argument("-pretrained_model", default='bert_model', type=str)
 
     parser.add_argument("-mode", default='', type=str)
     parser.add_argument("-select_mode", default='greedy', type=str)
     parser.add_argument("-map_path", default='../../data/')
     parser.add_argument("-raw_path", default='../../line_data')
-    parser.add_argument("-save_path", default='../../data/')
+    parser.add_argument("-save_path", default='./savepath/')
 
     parser.add_argument("-shard_size", default=1000, type=int)
     parser.add_argument('-min_src_nsents', default=1, type=int)

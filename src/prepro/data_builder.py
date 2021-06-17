@@ -21,7 +21,7 @@ from others.utils import clean
 from prepro.utils import _get_word_ngrams
 
 import xml.etree.ElementTree as ET
-
+import codecs
 nyt_remove_words = ["photo", "graph", "chart", "map", "table", "drawing"]
 
 
@@ -35,7 +35,7 @@ def load_json(p, lower):
     source = []
     tgt = []
     flag = False
-    for sent in json.load(open(p))['sentences']:
+    for sent in json.load(open(p, encoding = 'utf-8'))['sentences']:
         tokens = [t['word'] for t in sent['tokens']]
         if (lower):
             tokens = [t.lower() for t in tokens]
@@ -209,7 +209,7 @@ def hashhex(s):
 class BertData():
     def __init__(self, args):
         self.args = args
-        self.tokenizer = tokenizer = BertTokenizer.from_pretrained('bert_model')
+        self.tokenizer = tokenizer = BertTokenizer.from_pretrained('bert_model', do_lower_case=False)
 
         self.sep_token = '[SEP]'
         self.cls_token = '[CLS]'
@@ -303,7 +303,7 @@ def _format_to_bert(params):
     bert = BertData(args)
 
     logger.info('Processing %s' % json_file)
-    jobs = json.load(open(json_file))
+    jobs = json.load(open(json_file, encoding = 'utf-8'))
     datasets = []
     for d in jobs:
         source, tgt = d['src'], d['tgt']
@@ -312,8 +312,7 @@ def _format_to_bert(params):
         if (args.lower):
             source = [' '.join(s).lower().split() for s in source]
             tgt = [' '.join(s).lower().split() for s in tgt]
-        b_data = bert.preprocess(source, tgt, sent_labels, use_bert_basic_tokenizer=args.use_bert_basic_tokenizer,
-                                 is_test=is_test)
+        b_data = bert.preprocess(source, tgt, sent_labels, use_bert_basic_tokenizer=args.use_bert_basic_tokenizer, is_test=is_test)
         # b_data = bert.preprocess(source, tgt, sent_labels, use_bert_basic_tokenizer=args.use_bert_basic_tokenizer)
 
         if (b_data is None):
@@ -339,7 +338,8 @@ def format_to_lines(args):
         corpus_mapping[corpus_type] = {key.strip(): 1 for key in temp}
     train_files, valid_files, test_files = [], [], []
     for f in glob.glob(pjoin(args.raw_path, '*.json')):
-        real_name = f.split('/')[-1].split('.')[0]
+        tt = f.split('/')[-1].split('.')
+        real_name = tt[0]
         if (real_name in corpus_mapping['valid']):
             valid_files.append(f)
         elif (real_name in corpus_mapping['test']):

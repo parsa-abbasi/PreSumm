@@ -15,6 +15,10 @@ First of all, you should clone this repository using the following command:
 git clone https://github.com/parsa-abbasi/PreSumm.git
 ```
 
+```sh
+cd PreSumm
+```
+
 ### Requirements
 
 The PreSumm requires the following libraries:
@@ -29,6 +33,20 @@ All of them can be installed using the following command:
 
 ```sh
 pip install -r requirements.txt
+```
+
+The original code was based on the *pytorch_transformers* which is the old version of *HuggingFace's transformers*. However, we should replace that with the *transformer* library, as we want to use state-of-the-art transformer models. On the other hand, some functions are deprecated or renamed in the latest version of this library. The best version I found suitable for this project is v2.1.0. You can install it using the following code:
+
+```sh
+pip install transformers==2.1.0
+```
+
+You can test the following python codes, to make sure that the transformers library is correctly installed:
+
+```python
+import transformers
+transformers.__version__
+from transformers import AutoModel
 ```
 
 However, the default installation of the pyrouge library can be cause some errors. Therefore you should install pyrouge with a few tricky  commands (based on this [colab notebook](https://colab.research.google.com/drive/1-vAnr3d3W8GtqSCn4MwjrdQrzN0uCXzx?usp=sharing#scrollTo=flpYGUs0cNZh)):
@@ -49,12 +67,29 @@ pyrouge_set_rouge_path 'pyrouge/tools/ROUGE-1.5.5'
 
 ```sh
 cd pyrouge/tools/ROUGE-1.5.5/data
-rm WordNet-2.0.exc.db # only if exist
-cd WordNet-2.0-Exceptions
-rm WordNet-2.0.exc.db # only if exist
+```
 
+```sh
+rm WordNet-2.0.exc.db # only if exist
+```
+
+```sh
+cd WordNet-2.0-Exceptions
+```
+
+```sh
+rm WordNet-2.0.exc.db # only if exist
+```
+
+```sh
 ./buildExeptionDB.pl . exc WordNet-2.0.exc.db
+```
+
+```sh
 cd ../
+```
+
+```sh
 ln -s WordNet-2.0-Exceptions/WordNet-2.0.exc.db WordNet-2.0.exc.db
 ```
 
@@ -90,17 +125,24 @@ For example, you just need to download the `pytorch_model.bin`, `config.json`, a
 
 ```sh
 cd bert_model
+```
+
+```sh
 wget https://huggingface.co/HooshvareLab/bert-base-parsbert-uncased/resolve/main/pytorch_model.bin
 wget https://huggingface.co/HooshvareLab/bert-base-parsbert-uncased/resolve/main/config.json
 wget https://huggingface.co/HooshvareLab/bert-base-parsbert-uncased/resolve/main/vocab.txt
 ```
 
-**Note:** Make sure that you added the following tokens to the `vocab.txt` file.
+<font color='red'>**Note:**</font> The following tokens must be present in the `vocab.txt` file. Otherwise, you need to replace some of the words with the following tokens.
 
 ```markdown
 [unused0]
 [unused1]
 [unused2]
+[unused3]
+[unused4]
+[unused5]
+[unused6]
 ```
 
 ## Dataset
@@ -204,7 +246,7 @@ This repository focuses on the abstractive setting of the PreSumm model, and it 
 You can use a command like the following to set hyperparameters up and start training the model.
 
 ```sh
-python src/train.py  -task abs -mode train -bert_data_path 'bert_data/train/' -dec_dropout 0.2 -model_path 'models' -sep_optim true -lr_bert 0.002 -lr_dec 0.2 -save_checkpoint_steps 10000 -batch_size 32 -train_steps 200000 -max_pos 512 -report_every 50 -accum_count 5 -use_bert_emb true -use_interval true -warmup_steps_bert 20000 -warmup_steps_dec 10000 -visible_gpus 0 -log_file logs/abs_bert.log
+python src/train.py  -task abs -mode train -bert_data_path 'bert_data/train/' -dec_dropout 0.2 -model_path 'models' -sep_optim true -lr_bert 0.002 -lr_dec 0.2 -save_checkpoint_steps 10000 -batch_size 32 -train_steps 100000 -max_pos 512 -report_every 100 -accum_count 5 -use_bert_emb true -use_interval true -warmup_steps_bert 8000 -warmup_steps_dec 4000 -visible_gpus 0 -log_file logs/abs_bert.log -large False -share_emb True -finetune_bert False -dec_layers 1 -enc_layers 1 -min_length 2
 ```
 
 ## Evaluation
@@ -224,6 +266,6 @@ Finally, the following command will produce the abstraction for the given texts 
 Don't forget to change the hyperparameters based on your task. You can define the model using the `test_from` argument.
 
 ```sh
-python src/train.py -task abs -mode test -batch_size 3000 -test_batch_size 500 -bert_data_path 'bert_data/temp/' -log_file logs/test_abs_bert.log -sep_optim true -use_interval true -visible_gpus 0 -max_pos 512 -max_length 256 -alpha 0.95 -min_length 1 -result_path 'results/test/results' -test_from 'models/model_step_100000.pt'
+python src/train.py -task abs -mode test -batch_size 1 -test_batch_size 1 -bert_data_path 'bert_data/test/' -log_file logs/test_abs_bert.log -sep_optim true -use_interval true -visible_gpus 0 -alpha 0.95 -result_path 'results/test/results' -test_from 'models/model_step_100000.pt'
 ```
 

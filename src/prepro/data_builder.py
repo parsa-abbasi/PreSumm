@@ -16,7 +16,7 @@ from multiprocess import Pool
 from others.logging import logger
 from others.tokenization import BertTokenizer
 from pytorch_transformers import XLNetTokenizer
-
+from transformers import AutoConfig, AutoTokenizer, AutoModel
 from others.utils import clean
 from prepro.utils import _get_word_ngrams
 
@@ -209,7 +209,7 @@ def hashhex(s):
 class BertData():
     def __init__(self, args):
         self.args = args
-        self.tokenizer = tokenizer = BertTokenizer.from_pretrained('bert_model', do_lower_case=False)
+        self.tokenizer = AutoTokenizer.from_pretrained('bert_model', do_lower_case=False)
 
         self.sep_token = '[SEP]'
         self.cls_token = '[CLS]'

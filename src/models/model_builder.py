@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from pytorch_transformers import BertModel, BertConfig
 from torch.nn.init import xavier_uniform_
-
+from transformers import AutoConfig, AutoTokenizer, AutoModel
 from models.decoder import TransformerDecoder
 from models.encoder import Classifier, ExtTransformerEncoder
 from models.optimizers import Optimizer
@@ -116,7 +116,7 @@ class Bert(nn.Module):
     def __init__(self, large, temp_dir, finetune=False):
         super(Bert, self).__init__()
         
-        self.model = BertModel.from_pretrained('bert_model', cache_dir=temp_dir)
+        self.model = AutoModel.from_pretrained('bert_model', cache_dir=temp_dir)
         
         self.finetune = finetune
 

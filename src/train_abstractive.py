@@ -13,7 +13,7 @@ import time
 
 import torch
 from pytorch_transformers import BertTokenizer
-
+from transformers import AutoConfig, AutoTokenizer, AutoModel
 import distributed
 from models import data_loader, model_builder
 from models.data_loader import load_dataset
@@ -187,7 +187,7 @@ def validate(args, device_id, pt, step):
                                         args.batch_size, device,
                                         shuffle=False, is_test=False)
 
-    tokenizer = BertTokenizer.from_pretrained('bert_model', do_lower_case=True, cache_dir=args.temp_dir)
+    tokenizer = AutoTokenizer.from_pretrained('bert_model', do_lower_case=True, cache_dir=args.temp_dir)
     symbols = {'BOS': tokenizer.vocab['[unused0]'], 'EOS': tokenizer.vocab['[unused1]'],
                'PAD': tokenizer.vocab['[PAD]'], 'EOQ': tokenizer.vocab['[unused2]']}
 
@@ -221,7 +221,7 @@ def test_abs(args, device_id, pt, step):
     test_iter = data_loader.Dataloader(args, load_dataset(args, c_type, shuffle=False),
                                        args.test_batch_size, device,
                                        shuffle=False, is_test=True)
-    tokenizer = BertTokenizer.from_pretrained('bert_model', do_lower_case=True, cache_dir=args.temp_dir)
+    tokenizer = AutoTokenizer.from_pretrained('bert_model', do_lower_case=True, cache_dir=args.temp_dir)
     symbols = {'BOS': tokenizer.vocab['[unused0]'], 'EOS': tokenizer.vocab['[unused1]'],
                'PAD': tokenizer.vocab['[PAD]'], 'EOQ': tokenizer.vocab['[unused2]']}
     predictor = build_predictor(args, tokenizer, symbols, model, logger)
@@ -249,7 +249,7 @@ def test_text_abs(args, device_id, pt, step):
     test_iter = data_loader.Dataloader(args, load_dataset(args, 'test', shuffle=False),
                                        args.test_batch_size, device,
                                        shuffle=False, is_test=True)
-    tokenizer = BertTokenizer.from_pretrained('bert_model', do_lower_case=True, cache_dir=args.temp_dir)
+    tokenizer = AutoTokenizer.from_pretrained('bert_model', do_lower_case=True, cache_dir=args.temp_dir)
     symbols = {'BOS': tokenizer.vocab['[unused0]'], 'EOS': tokenizer.vocab['[unused1]'],
                'PAD': tokenizer.vocab['[PAD]'], 'EOQ': tokenizer.vocab['[unused2]']}
     predictor = build_predictor(args, tokenizer, symbols, model, logger)
@@ -325,7 +325,7 @@ def train_abs_single(args, device_id):
 
     logger.info(model)
 
-    tokenizer = BertTokenizer.from_pretrained('bert_model', do_lower_case=True, cache_dir=args.temp_dir)
+    tokenizer = AutoTokenizer.from_pretrained('bert_model', do_lower_case=True, cache_dir=args.temp_dir)
     symbols = {'BOS': tokenizer.vocab['[unused0]'], 'EOS': tokenizer.vocab['[unused1]'],
                'PAD': tokenizer.vocab['[PAD]'], 'EOQ': tokenizer.vocab['[unused2]']}
 
@@ -333,5 +333,7 @@ def train_abs_single(args, device_id):
                           label_smoothing=args.label_smoothing)
 
     trainer = build_trainer(args, device_id, model, optim, train_loss)
+
+    tif = train_iter_fct()
 
     trainer.train(train_iter_fct, args.train_steps)

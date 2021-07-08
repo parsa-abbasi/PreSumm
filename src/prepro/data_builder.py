@@ -261,7 +261,7 @@ class BertData():
         sent_labels = sent_labels[:len(cls_ids)]
 
         tgt_subtokens_str = '[unused0] ' + ' [unused2] '.join(
-            [' '.join(self.tokenizer.tokenize(' '.join(tt), use_bert_basic_tokenizer=use_bert_basic_tokenizer)) for tt in tgt]) + ' [unused1]'
+            [' '.join(self.tokenizer.tokenize(' '.join(tt))) for tt in tgt]) + ' [unused1]'
         tgt_subtoken = tgt_subtokens_str.split()[:self.args.max_tgt_ntokens]
         if ((not is_test) and len(tgt_subtoken) < self.args.min_tgt_ntokens):
             return None
@@ -312,8 +312,8 @@ def _format_to_bert(params):
         if (args.lower):
             source = [' '.join(s).lower().split() for s in source]
             tgt = [' '.join(s).lower().split() for s in tgt]
-        b_data = bert.preprocess(source, tgt, sent_labels, use_bert_basic_tokenizer=args.use_bert_basic_tokenizer, is_test=is_test)
-        # b_data = bert.preprocess(source, tgt, sent_labels, use_bert_basic_tokenizer=args.use_bert_basic_tokenizer)
+        b_data = bert.preprocess(source, tgt, sent_labels, is_test=is_test)
+        # b_data = bert.preprocess(source, tgt, sent_labels)
 
         if (b_data is None):
             continue
@@ -516,8 +516,8 @@ def _format_to_bert(params):
         if (args.lower):
             source = [' '.join(s).lower().split() for s in source]
             tgt = [' '.join(s).lower().split() for s in tgt]
-        b_data = bert.preprocess(source, tgt, sent_labels, use_bert_basic_tokenizer=args.use_bert_basic_tokenizer, is_test=is_test)
-        # b_data = bert.preprocess(source, tgt, sent_labels, use_bert_basic_tokenizer=args.use_bert_basic_tokenizer)
+        b_data = bert.preprocess(source, tgt, sent_labels, is_test=is_test)
+        # b_data = bert.preprocess(source, tgt, sent_labels)
 
         if (b_data is None):
             continue

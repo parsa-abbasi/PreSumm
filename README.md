@@ -31,9 +31,6 @@ The PreSumm requires the following libraries:
 
 All of them can be installed using the following command:
 ```sh
-pip uninstall torchvision
-```
-```sh
 pip install -r requirements.txt
 ```
 
